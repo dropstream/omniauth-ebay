@@ -11,7 +11,7 @@ describe OmniAuth::Strategies::Ebay do
   def app
     Rack::Builder.new {
       use Rack::Session::Cookie
-      use OmniAuth::Strategies::Ebay, "runame", "devid", "appid", "certid", "siteid", "https://api.ebay.com/ws/api.dll"
+      use OmniAuth::Strategies::Ebay, "runame", "devid", "appid", "certid", "siteid", "https://api.ebay.com/ws/api.dll", "https://signin.ebay.com/ws/eBayISAPI.dll"
       run lambda {|env| [404, {'Content-Type' => 'text/plain'}, [nil || env.key?('omniauth.auth').to_s]] }
     }.to_app
   end

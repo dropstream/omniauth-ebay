@@ -6,8 +6,9 @@ module OmniAuth
       include OmniAuth::Strategy
       include EbayAPI
 
-      args [:runame, :devid, :appid, :certid, :siteid, :apiurl]
-      option :name, "ebay"
+      args [:runame, :devid, :appid, :certid, :siteid, :apiurl, :loginurl]
+      option :name, 'ebay'
+      option :loginurl, 'https://signin.ebay.com/ws/eBayISAPI.dll'
       option :runame, nil
       option :devid, nil
       option :appid, nil
@@ -15,13 +16,14 @@ module OmniAuth
       option :siteid, nil
       option :apiurl, nil
 
+
       uid { raw_info['EIASToken'] }
       info do
         {
             :ebay_id => raw_info['UserID'],
             :ebay_token => @auth_token,
             :email => raw_info['Email'],
-            :full_name => raw_info["RegistrationAddress"].try(:[], "Name")
+            :full_name => raw_info['RegistrationAddress'].try(:[], 'Name')
         }
       end
 
@@ -35,18 +37,19 @@ module OmniAuth
       #2: Request from eBay a SessionID
       #3: Redirect to eBay Login URL with the RUName and SessionID
       def request_phase
-        session_id = generate_session_id
-        redirect ebay_login_url(session_id)
+        ebay_session_id = generate_session_id
+        session['ebay_session_id'] = ebay_session_id
+        redirect ebay_login_url(ebay_session_id)
       rescue Exception => ex
-        fail!("Failed to retrieve session id from ebay", ex)
+        fail!('Failed to retrieve session id from ebay', ex)
       end
 
       #4: We'll get to the callback phase by setting our accept/reject URL in the ebay application settings(/auth/ebay/callback)
       #5: Request an eBay Auth Token with the returned username&secret_id parameters.
       #6: Request the user info from eBay
       def callback_phase
-        @auth_token = get_auth_token(request.params["username"], request.params["sid"])
-        @user_info = get_user_info(request.params["username"], @auth_token)
+        @auth_token = get_auth_token(session['ebay_session_id'])
+        @user_info = get_user_info(@auth_token)
         super
       rescue Exception => ex
         fail!("Failed to retrieve user info from ebay %s"%ex.message(), ex)

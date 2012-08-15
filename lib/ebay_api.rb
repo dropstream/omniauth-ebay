@@ -2,7 +2,6 @@ require 'multi_xml'
 
 module EbayAPI
 
-  EBAY_LOGIN_URL = "https://signin.ebay.com/ws/eBayISAPI.dll"
   X_EBAY_API_REQUEST_CONTENT_TYPE = 'text/xml'
   X_EBAY_API_COMPATIBILITY_LEVEL = '675'
   X_EBAY_API_GETSESSIONID_CALL_NAME = 'GetSessionID'
@@ -21,32 +20,26 @@ module EbayAPI
     MultiXml.parse(response)["GetSessionIDResponse"]["SessionID"]
   end
 
-  def get_auth_token(username, secret_id)
+  def get_auth_token(session_id)
     request = %Q(
-          <?xml version="1.0" encoding="utf-8"?>
-          <FetchTokenRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-             <RequesterCredentials>
-               <Username>#{username}</Username>
-             </RequesterCredentials>
-             <SecretID>#{secret_id.gsub(' ', '+')}</SecretID>
-          </FetchTokenRequest>
+      <?xml version="1.0" encoding="utf-8"?>
+      <FetchTokenRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+        <SessionID>#{session_id}</SessionID>
+      </FetchTokenRequest>
     )
 
     response = api(X_EBAY_API_FETCHAUTHTOKEN_CALL_NAME, request)
     MultiXml.parse(response)["FetchTokenResponse"]["eBayAuthToken"]
   end
 
-  def get_user_info(username, auth_token)
+  def get_user_info(auth_token)
     request = %Q(
-          <?xml version="1.0" encoding="utf-8"?>
-          <GetUserRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-            <DetailLevel>ReturnAll</DetailLevel>
-            <UserID>#{username}</UserID>
-            <RequesterCredentials>
-              <eBayAuthToken>#{auth_token}</eBayAuthToken>
-            </RequesterCredentials>
-            <WarningLevel>High</WarningLevel>
-          </GetUserRequest>
+      <?xml version="1.0" encoding="utf-8"?>
+      <GetUserRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+        <RequesterCredentials>
+          <eBayAuthToken>#{auth_token}</eBayAuthToken>
+        </RequesterCredentials>
+      </GetUserRequest>
     )
 
     response = api(X_EBAY_API_GETUSER_CALL_NAME, request)
@@ -54,10 +47,11 @@ module EbayAPI
   end
 
   def ebay_login_url(session_id)
-    #TODO: Refactor ruparams to receive all of the request query string
-    url = "#{EBAY_LOGIN_URL}?SingleSignOn&runame=#{options.runame}&sid=#{URI.escape(session_id).gsub('+', '%2B')}"
+
+    url = "#{options.loginurl}?SignIn&runame=#{options.runame}&SessID=#{URI.escape(session_id)}"
+
     internal_return_to = request.params['internal_return_to'] || request.params[:internal_return_to]
-    url << "&ruparams=#{CGI::escape('internal_return_to=' + internal_return_to)}" if internal_return_to
+    url << "&ruparams=#{URI.escape('internal_return_to=' + internal_return_to)}" if internal_return_to
 
     url
   end
