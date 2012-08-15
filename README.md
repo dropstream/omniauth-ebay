@@ -17,9 +17,15 @@ Note: The examples are for a Rails 3 app.
 
 ```ruby
     Rails.application.config.middleware.use OmniAuth::Builder do
-       provider :ebay, "runame", "devid", "appid", "certid", "siteid", "apiurl"
+       provider :ebay, "runame", "devid", "appid", "certid", "siteid", "apiurl", "loginurl"
     end
 ```
+
+Where ruName you can get from your dev zone in applications tab under manage you applications concent form there is a section called manage your RuNames.
+devid, appid, certid are from the application tab.
+siteid can be 0 for US and other numbers for other ebay sites checout their documentation for full list.
+apiurl for production is https://api.ebay.com/ws/api.dll for the us site and for the sendbox is https://api.sendbox.ebay.com/ws/api.dll
+loginurl for production is https://signin.ebay.com/ws/eBayISAPI.dll for the us site (I don't know if it changes for other sites) and for the sendbox https://signin.sendbox.ebay.com/ws/eBayISAPI.dll
 
 Insert your app credentials in the given order. You can find out these details by going into your developer's account at [eBay DevZone](https://developer.ebay.com/DevZone/account/)
 
