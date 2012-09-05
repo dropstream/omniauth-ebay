@@ -37,9 +37,7 @@ module OmniAuth
       #2: Request from eBay a SessionID
       #3: Redirect to eBay Login URL with the RUName and SessionID
       def request_phase
-        ebay_session_id = generate_session_id
-        session['ebay_session_id'] = ebay_session_id
-        redirect ebay_login_url(ebay_session_id)
+        redirect ebay_login_url(generate_session_id)
       rescue Exception => ex
         fail!('Failed to retrieve session id from ebay', ex)
       end
@@ -48,7 +46,7 @@ module OmniAuth
       #5: Request an eBay Auth Token with the returned username&secret_id parameters.
       #6: Request the user info from eBay
       def callback_phase
-        @auth_token = get_auth_token(session['ebay_session_id'])
+        @auth_token = get_auth_token(request.params['sid'], request.params['username'])
         @user_info = get_user_info(@auth_token)
         super
       rescue Exception => ex

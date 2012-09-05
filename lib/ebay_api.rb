@@ -20,11 +20,14 @@ module EbayAPI
     MultiXml.parse(response)["GetSessionIDResponse"]["SessionID"]
   end
 
-  def get_auth_token(session_id)
+  def get_auth_token(session_id, user_name)
     request = %Q(
       <?xml version="1.0" encoding="utf-8"?>
       <FetchTokenRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-        <SessionID>#{session_id}</SessionID>
+        <RequesterCredentials>
+          <Username>#{user_name}</Username>
+        </RequesterCredentials>
+        <SecretID>#{session_id}</SecretID>
       </FetchTokenRequest>
     )
 
@@ -48,7 +51,7 @@ module EbayAPI
 
   def ebay_login_url(session_id)
 
-    url = "#{options.loginurl}?SignIn&runame=#{options.runame}&SessID=#{URI.escape(session_id)}"
+    url = "#{options.loginurl}?SingleSignOn&runame=#{options.runame}&sid=#{URI.escape(session_id)}"
 
     internal_return_to = request.params['internal_return_to'] || request.params[:internal_return_to]
     url << "&ruparams=#{URI.escape('internal_return_to=' + internal_return_to)}" if internal_return_to
