@@ -29,7 +29,7 @@ module OmniAuth
 
       extra do
         {
-            :internal_return_to => request.params['internal_return_to'] || request.params[:internal_return_to]
+            :redirect_url => request.params['redirect_url'] || request.params[:redirect_url]
         }
       end
 
