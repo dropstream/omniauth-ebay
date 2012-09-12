@@ -17,19 +17,20 @@ module OmniAuth
       option :apiurl, nil
 
 
-      ebay_eias_token { raw_info['EIASToken'] }
+      uid { raw_info['EIASToken'] }
       info do
         {
-            :ebay_id => raw_info['UserID'],
-            :ebay_token => @auth_token,
-            :email => raw_info['Email'],
-            :full_name => raw_info['RegistrationAddress'].try(:[], 'Name')
+            ebay_id: raw_info['UserID'],
+            ebay_token: @auth_token,
+            email: raw_info['Email'],
+            full_name: raw_info['RegistrationAddress'].try(:[], 'Name'),
+            ebay_eias_token: raw_info['EIASToken']
         }
       end
 
       extra do
         {
-            :redirect_url => request.params['redirect_url'] || request.params[:redirect_url]
+            redirect_url: request.params['redirect_url'] || request.params[:redirect_url]
         }
       end
 
