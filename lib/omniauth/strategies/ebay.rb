@@ -17,7 +17,7 @@ module OmniAuth
       option :apiurl, nil
 
 
-      uid { raw_info['EIASToken'] }
+      ebay_eias_token { raw_info['EIASToken'] }
       info do
         {
             :ebay_id => raw_info['UserID'],
