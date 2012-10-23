@@ -54,7 +54,7 @@ module EbayAPI
     url = "#{options.loginurl}?SingleSignOn&runame=#{options.runame}&sid=#{URI.escape(session_id)}"
 
     redirect_url = request.params['redirect_url'] || request.params[:redirect_url]
-    url << "&ruparams=#{URI.escape('redirect_url=' + redirect_url)}" if redirect_url
+    url << "&ruparams=#{CGI.escape('redirect_url=' + redirect_url)}" if redirect_url
 
     url
   end
