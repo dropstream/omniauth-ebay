@@ -30,7 +30,7 @@ module OmniAuth
 
       extra do
         {
-            redirect_url: request.env['omniauth.params']['redirect_url']
+            redirect_url: request.env['omniauth.params']['redirect_url'].gsub(" ","+")
         }
       end
 
