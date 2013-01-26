@@ -1,4 +1,5 @@
 require 'spec_helper'
 
-describe "ebay api" do
+describe EbayAPI do
+  describe '.get_session_id'
 end

@@ -1,41 +1,46 @@
 require 'multi_xml'
+require 'faraday'
 
 module EbayAPI
 
-  X_EBAY_API_REQUEST_CONTENT_TYPE = 'text/xml'
-  X_EBAY_API_COMPATIBILITY_LEVEL = '675'
-  X_EBAY_API_GETSESSIONID_CALL_NAME = 'GetSessionID'
-  X_EBAY_API_FETCHAUTHTOKEN_CALL_NAME = 'FetchToken'
-  X_EBAY_API_GETUSER_CALL_NAME = 'GetUser'
+  ACTIONS = {
+    fetch_auth_token: 'FetchToken',
+    get_session_id: 'GetSessionID',
+    get_user: 'GetUser'
+    
+  }
 
-  def generate_session_id
+  LIVE_API_ENDPOINT = "https://api.ebay.com/ws/api.dll"
+  TEST_API_ENDPOINT = "https://api.sandbox.ebay.com/ws/api.dll"
+  
+  LIVE_SIGNIN_ENDPOINT = 'https://signin.ebay.com/ws/eBayISAPI.dll'
+  TEST_SIGNIN_ENDPOINT = 'https://signin.sandbox.ebay.com/ws/eBayISAPI.dll'
+  
+  def get_session_id(ru_name)
     request = %Q(
           <?xml version="1.0" encoding="utf-8"?>
           <GetSessionIDRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-            <RuName>#{options.runame}</RuName>
+            <RuName>#{ru_name}</RuName>
           </GetSessionIDRequest>
     )
 
-    response = api(X_EBAY_API_GETSESSIONID_CALL_NAME, request)
+    response = commit(:get_session_id, request)
     MultiXml.parse(response)["GetSessionIDResponse"]["SessionID"]
   end
 
-  def get_auth_token(session_id, user_name)
+  def fetch_auth_token(session_id)
     request = %Q(
       <?xml version="1.0" encoding="utf-8"?>
       <FetchTokenRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-        <RequesterCredentials>
-          <Username>#{user_name}</Username>
-        </RequesterCredentials>
-        <SecretID>#{session_id}</SecretID>
+        <SessionID>#{session_id}</SessionID>
       </FetchTokenRequest>
     )
 
-    response = api(X_EBAY_API_FETCHAUTHTOKEN_CALL_NAME, request)
+    response = commit(:fetch_auth_token, request)
     MultiXml.parse(response)["FetchTokenResponse"]["eBayAuthToken"]
   end
 
-  def get_user_info(auth_token)
+  def get_user(auth_token)
     request = %Q(
       <?xml version="1.0" encoding="utf-8"?>
       <GetUserRequest xmlns="urn:ebay:apis:eBLBaseComponents">
@@ -45,41 +50,54 @@ module EbayAPI
       </GetUserRequest>
     )
 
-    response = api(X_EBAY_API_GETUSER_CALL_NAME, request)
+    response = commit(:get_user, request)
     MultiXml.parse(response)["GetUserResponse"]['User']
   end
 
   def ebay_login_url(session_id)
-
-    url = "#{options.loginurl}?SingleSignOn&runame=#{options.runame}&sid=#{URI.escape(session_id)}"
-
-    redirect_url = request.params['redirect_url'] || request.params[:redirect_url]
-    url << "&ruparams=#{CGI.escape('redirect_url=' + redirect_url)}" if redirect_url
+    url = "#{signin_endpoint}?SignIn&RuName=#{options.runame}&SessID=#{URI.escape(session_id)}"
+    params = request.params.map{|k,v| "#{k}=#{v}"}.join('&')
+    url << "&ruparams=#{CGI::escape(params)}" if params
 
     url
   end
 
   protected
+  
+  def commit(action, request_body)
 
-  def api(call_name, request)
-    headers = ebay_request_headers(call_name, request.length.to_s)
-    url = URI.parse(options.apiurl)
-    req = Net::HTTP::Post.new(url.path, headers)
-    http = Net::HTTP.new(url.host, url.port)
-    http.use_ssl = true
-    http.start { |h| h.request(req, request) }.body
+    api_endpoint_uri = URI.parse(api_endpoint)
+    conn = Faraday.new(:url => "https://#{api_endpoint_uri.host}", 
+                        :headers => api_headers(action)) do |faraday|
+      faraday.adapter Faraday.default_adapter  # make requests with Net::HTTP
+    end
+
+    response = conn.post do |req|
+      req.url api_endpoint_uri.path
+      req.body = request_body
+    end
+
+    response.body
   end
 
-  def ebay_request_headers(call_name, request_length)
+  def api_headers(action)
     {
-        'X-EBAY-API-CALL-NAME'  => call_name,
-        'X-EBAY-API-COMPATIBILITY-LEVEL'  => X_EBAY_API_COMPATIBILITY_LEVEL,
+        'X-EBAY-API-CALL-NAME' => ACTIONS[action],
+        'X-EBAY-API-COMPATIBILITY-LEVEL' => '805',
         'X-EBAY-API-DEV-NAME' => options.devid,
         'X-EBAY-API-APP-NAME' => options.appid,
         'X-EBAY-API-CERT-NAME' => options.certid,
         'X-EBAY-API-SITEID' => options.siteid.to_s,
-        'Content-Type' => X_EBAY_API_REQUEST_CONTENT_TYPE,
-        'Content-Length' => request_length
+        'Content-Type' => 'text/xml'
     }
   end
+
+  def api_endpoint
+    options.is_sandbox == true ? TEST_API_ENDPOINT : LIVE_API_ENDPOINT
+  end
+  
+  def signin_endpoint
+    options.is_sandbox == true ? TEST_SIGNIN_ENDPOINT : LIVE_SIGNIN_ENDPOINT
+  end
+
 end
