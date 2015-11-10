@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rspec', '~> 2.7'
   s.add_development_dependency 'rake'
+  s.add_development_dependency 'geminabox', "~> 0.12.4"
   s.add_development_dependency 'rack-test'
   s.add_development_dependency 'vcr'
   s.add_development_dependency 'fakeweb'
