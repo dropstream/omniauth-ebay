@@ -3,8 +3,6 @@ require 'bundler'
 Bundler.setup :default, :development, :test
 
 require 'rack/test'
-require 'capybara/rspec'
-require 'capybara/mechanize'
 require 'omniauth-ebay'
 
 RSpec.configure do |config|
